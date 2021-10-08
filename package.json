@@ -15,5 +15,9 @@
   "bugs": {
     "url": "https://github.com/Xib1uvXi/rarity-caller/issues"
   },
-  "homepage": "https://github.com/Xib1uvXi/rarity-caller#readme"
+  "homepage": "https://github.com/Xib1uvXi/rarity-caller#readme",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.2",
+    "@truffle/hdwallet-provider": "^1.5.1"
+  }
 }
