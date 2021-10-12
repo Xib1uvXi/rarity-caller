@@ -14,38 +14,21 @@ contract RarityCaller is Ownable {
 
     // fees
     mapping(address => uint) public fees;
-    uint public feeMultiplier = 30;
 
     function rarityAdventureAll(uint[] calldata summoners) external payable {
-         uint startGasLeft = gasleft();
-         
          for (uint i; i < summoners.length; i++) {
             rarity.adventure(summoners[i]);
         }
-
-        uint cost = (startGasLeft - gasleft()) * tx.gasprice * feeMultiplier / 100;
-
-        require(msg.value > cost, "INSUFFICIENT_FEE");
         
-        fees[address(this)] += cost;
-
-        payable(msg.sender).transfer(msg.value - cost);
+        fees[address(this)] += msg.value;
     }
 
     function rarityLevelupAll(uint[] calldata summoners) external payable {
-        uint startGasLeft = gasleft();
-        
-        for (uint i; i < summoners.length; i++) {
+       for (uint i; i < summoners.length; i++) {
             rarity.level_up(summoners[i]);
         }
-
-        uint cost = (startGasLeft - gasleft()) * tx.gasprice * feeMultiplier / 100;
-
-        require(msg.value > cost, "INSUFFICIENT_FEE");
         
-        fees[address(this)] += cost;
-
-        payable(msg.sender).transfer(msg.value - cost);
+        fees[address(this)] += msg.value;
     }
 
     function withdrawFees(
@@ -57,12 +40,6 @@ contract RarityCaller is Ownable {
         payable(to).transfer(amount);
     }
 
-    function setFeeMultiplier(
-        uint multiplier
-    ) external onlyOwner {
-        require(multiplier <= 100, "MULTIPLIER_OVERFLOW");
-        feeMultiplier = multiplier;
-    }
 }
 
 
