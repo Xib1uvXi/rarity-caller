@@ -3,43 +3,83 @@
 pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IRarity.sol";
+
+interface adventurable {
+    function adventure(uint) external;
+}
+
+// Part: rarity_gold
+
+interface rarity_gold {
+    function claim(uint) external;
+}
+
+// Part: rarity_cellar
+interface rarity_cellar is adventurable {
+}
+
+// Part: rarity_manifested
+interface rarity_manifested is adventurable {
+    function level_up(uint) external;
+    function approve(address, uint256) external;
+    function getApproved(uint256) external view returns (address);
+}
 
 contract RarityCaller is Ownable {
     // Rarity Contracts
-    IRarity rarity = IRarity(0xce761D788DF608BD21bdd59d6f4B54b2e27F25Bb);// 冒险 && 升级
-    // IRarityAttributes rarity_attributes = IRarityAttributes(0xB5F5AF1087A8DA62A23b08C00C6ec9af21F397a1); //召唤师属性购买	
-    // IRarityDungeon rarity_dungeon = IRarityDungeon(0x2A0F1cB17680161cF255348dDFDeE94ea8Ca196A);//副本
-    // IRarityGold rarity_gold = IRarityGold(0x2069B76Afe6b734Fb65D1d099E7ec64ee9CC76B2);//金币领取合约
-
-    // fees
-    mapping(address => uint) public fees;
-
-    function rarityAdventureAll(uint[] calldata summoners) external payable {
-         for (uint i; i < summoners.length; i++) {
-            rarity.adventure(summoners[i]);
+    rarity_manifested constant _rm = rarity_manifested(0xce761D788DF608BD21bdd59d6f4B54b2e27F25Bb);
+    rarity_gold constant       _gold = rarity_gold(0x2069B76Afe6b734Fb65D1d099E7ec64ee9CC76B2);
+    rarity_cellar constant     _dungeon = rarity_cellar(0x2A0F1cB17680161cF255348dDFDeE94ea8Ca196A);
+    
+    function adventure(uint256[] calldata _ids) external payable {
+        for (uint i = 0; i < _ids.length; i++) {
+            _rm.adventure(_ids[i]);
         }
-        
-        fees[address(this)] += msg.value;
     }
 
-    function rarityLevelupAll(uint[] calldata summoners) external payable {
-       for (uint i; i < summoners.length; i++) {
-            rarity.level_up(summoners[i]);
+    function level_up(uint256[] calldata _ids) external payable {
+        for (uint i = 0; i < _ids.length; i++) {
+            _rm.level_up(_ids[i]);
         }
-        
-        fees[address(this)] += msg.value;
+    }
+
+    function dungeon(uint256[] calldata _delvers, uint256[] calldata _need_approval) external payable {
+        for (uint i = 0; i < _need_approval.length; i++) {
+            _rm.approve(address(this), _need_approval[i]);
+        }
+
+        for (uint i = 0; i < _delvers.length; i++) {
+            _dungeon.adventure(_delvers[i]);
+        }
+    }
+
+    function claim_gold(uint256[] calldata _claimers, uint256[] calldata _need_approval) external payable {
+        for (uint i = 0; i < _need_approval.length; i++) {
+            _rm.approve(address(this), _need_approval[i]);
+        }
+        for (uint i = 0; i < _claimers.length; i++) {
+            _gold.claim(_claimers[i]);
+        }
+    }
+
+    function is_approved(uint256[] calldata _ids) external view returns (bool[] memory _is_approved) {
+        _is_approved = new bool[](_ids.length);
+        for (uint i = 0; i < _ids.length; i++) {
+            _is_approved[i] = _rm.getApproved(_ids[i]) == address(this);
+        }
+    }
+
+    function approve_all(uint256[] calldata _ids) external payable {
+        for (uint i = 0; i < _ids.length; i++) {
+            _rm.approve(address(this), _ids[i]);
+        }
     }
 
     function withdrawFees(
         address to
     ) external onlyOwner {
-        require(fees[address(this)] >= 0, "ZERO_FEE");
-        uint amount = fees[address(this)];
-        fees[address(this)] = 0;
-        payable(to).transfer(amount);
+        payable(to).transfer(address(this).balance);
     }
-
 }
 
 
